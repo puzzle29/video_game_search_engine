@@ -35,8 +35,8 @@ public class GameInfoListener {
             IndexRequest indexRequest = new IndexRequest("games")
                 .id(gameId)
                 .source(message, XContentType.JSON);
-                // .setPipeline(contentType);  // Assuming content_type is a valid pipeline name
-            
+            // .setPipeline(contentType);  // Assuming content_type is a valid pipeline name
+
 
             IndexResponse response = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
 
