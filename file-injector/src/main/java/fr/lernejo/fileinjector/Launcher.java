@@ -22,6 +22,7 @@ public class Launcher {
         try (AbstractApplicationContext springContext = new AnnotationConfigApplicationContext(Launcher.class)) {
             RabbitTemplate rabbitTemplate = springContext.getBean(RabbitTemplate.class);
             String filePath = args.length == 0 ? null : args[0];
+            if (filePath == null) {throw new IllegalArgumentException("Missing file path argument");}
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.registerModule(new JavaTimeModule());

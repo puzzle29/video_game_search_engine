@@ -33,17 +33,7 @@ public class GameInfoListener {
             String gameId = headers.get("game_id").toString();
             String messageBody = new String(amqpMessage.getBody());
             Map<String, Object> gameData = objectMapper.readValue(messageBody, Map.class);
-            IndexRequest indexRequest = new IndexRequest("games")
-                .id(gameId)
-                .source(messageBody, XContentType.JSON);
-            IndexResponse response = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
-
-            if (response.getResult() == DocWriteResponse.Result.CREATED) {
-                System.out.println("Document created successfully with ID: " + response.getId());
-            } else if (response.getResult() == DocWriteResponse.Result.UPDATED) {
-                System.out.println("Document updated successfully with ID: " + response.getId());
-            }
-
+            IndexRequest indexRequest = new IndexRequest("games").id(gameId).source(messageBody, XContentType.JSON);
         } catch (Exception e) {
             e.printStackTrace();
         }

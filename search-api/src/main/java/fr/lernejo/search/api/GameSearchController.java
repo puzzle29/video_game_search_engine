@@ -33,7 +33,12 @@ public class GameSearchController {
             SearchResponse searchResponse = elasticsearchClient.search(searchRequest, RequestOptions.DEFAULT);
             return Optional.ofNullable(searchResponse)
                 .map(response -> Arrays.stream(response.getHits().getHits())
-                    .map(SearchHit::getSourceAsMap)
+                    .map(hit -> {
+                        Map<String, Object> gameData = new HashMap<>();
+                        gameData.put("id", hit.getId());
+                        gameData.putAll(hit.getSourceAsMap());
+                        return gameData;
+                    })
                     .collect(Collectors.toList()))
                 .orElse(Collections.emptyList());
         } catch (IOException e) {
