@@ -18,7 +18,6 @@ import java.util.UUID;
 
 @SpringBootApplication
 public class Launcher {
-
     public static void main(String[] args) {
         try (AbstractApplicationContext springContext = new AnnotationConfigApplicationContext(Launcher.class)) {
             RabbitTemplate rabbitTemplate = springContext.getBean(RabbitTemplate.class);
@@ -27,20 +26,9 @@ public class Launcher {
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.registerModule(new JavaTimeModule());
                 List<Map<String, Object>> gameDataList = objectMapper.readValue(new File(filePath), new TypeReference<List<Map<String, Object>>>() {});
-
                 for (Map<String, Object> gameData : gameDataList) {
-                    String messageId = UUID.randomUUID().toString();
-                    String contentType = "application/json";
-                    String gameId = gameData.get("id").toString();
-                    byte[] gameDataBytes = objectMapper.writeValueAsBytes(gameData);
-                    Message amqpMessage = MessageBuilder
-                        .withBody(gameDataBytes)
-                        .setContentType(contentType)
-                        .setMessageId(messageId)
-                        .setHeader("game_id", gameId)
-                        .build();
+                    Message amqpMessage = MessageBuilder.withBody(objectMapper.writeValueAsBytes(gameData)).setContentType("application/json").setMessageId(UUID.randomUUID().toString()).setHeader("game_id", gameData.get("id").toString()).build();
                     rabbitTemplate.convertAndSend("game_info", amqpMessage);
-                    System.out.println("Sent message with ID: " + messageId + " and game_id: " + gameId);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
