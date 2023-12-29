@@ -16,16 +16,20 @@ import org.springframework.context.annotation.Configuration;
 public class ElasticSearchConfiguration {
 
     @Value("${elasticsearch.host:localhost}")
-    private String elasticsearchHost;
-
+    final private String elasticsearchHost;
     @Value("${elasticsearch.port:9200}")
-    private int elasticsearchPort;
-
+    final private int elasticsearchPort;
     @Value("${elasticsearch.username:elastic}")
-    private String elasticsearchUsername;
-
+    final private String elasticsearchUsername;
     @Value("${elasticsearch.password:admin}")
-    private String elasticsearchPassword;
+    final private String elasticsearchPassword;
+
+    public ElasticSearchConfiguration(String elasticsearchHost, int elasticsearchPort, String elasticsearchUsername, String elasticsearchPassword) {
+        this.elasticsearchHost = elasticsearchHost;
+        this.elasticsearchPort = elasticsearchPort;
+        this.elasticsearchUsername = elasticsearchUsername;
+        this.elasticsearchPassword = elasticsearchPassword;
+    }
 
     @Bean
     public RestHighLevelClient restHighLevelClient(
@@ -34,11 +38,9 @@ public class ElasticSearchConfiguration {
         @Value("${elasticsearch.username:elastic}") String username,
         @Value("${elasticsearch.password:admin}") String password) {
 
-        // Configurer et renvoyer le client ElasticSearch
         RestClientBuilder restClientBuilder = RestClient.builder(
             new HttpHost(host, port, "http")
         );
-
         restClientBuilder.setHttpClientConfigCallback(
             httpClientBuilder -> httpClientBuilder
                 .setDefaultCredentialsProvider(createCredentialsProvider(username, password))

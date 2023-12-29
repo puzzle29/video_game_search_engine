@@ -13,43 +13,28 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
 public class GameSearchController {
-
     @Autowired
     private RestHighLevelClient elasticsearchClient;
-
     @GetMapping("/api/games")
     public List<Map<String, Object>> searchGames(@RequestParam String query, @RequestParam(defaultValue = "10") int size) {
         SearchRequest searchRequest = new SearchRequest("games");
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.queryStringQuery(query));
-        searchSourceBuilder.size(size);  // Définir la taille ici
-
-        searchRequest.source(searchSourceBuilder);
-
-        SearchResponse searchResponse = null;
-
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(QueryBuilders.queryStringQuery(query)).size(size);
         try {
-            searchResponse = elasticsearchClient.search(searchRequest, RequestOptions.DEFAULT);
+            SearchResponse searchResponse = elasticsearchClient.search(searchRequest, RequestOptions.DEFAULT);
+            return Optional.ofNullable(searchResponse)
+                .map(response -> Arrays.stream(response.getHits().getHits())
+                    .map(SearchHit::getSourceAsMap)
+                    .collect(Collectors.toList()))
+                .orElse(Collections.emptyList());
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-
-        if (searchResponse != null) {
-            return Arrays.stream(searchResponse.getHits().getHits())
-                .map(SearchHit::getSourceAsMap)
-                .collect(Collectors.toList());
-        } else {
-            // Gérer le cas où searchResponse est null (par exemple, en renvoyant une réponse d'erreur appropriée)
-            return Collections.emptyList(); // Ou une autre action appropriée
+            return Collections.emptyList();
         }
     }
+
 }

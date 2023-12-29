@@ -13,60 +13,38 @@ import org.springframework.context.support.AbstractApplicationContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @SpringBootApplication
 public class Launcher {
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println("Usage: java -jar your-jar-file.jar path/to/your/file.json");
-            throw new IllegalArgumentException("Missing file path argument");
-        }
-
-        String filePath = args[0];
-
         try (AbstractApplicationContext springContext = new AnnotationConfigApplicationContext(Launcher.class)) {
-            // Load the file using Jackson ObjectMapper
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new JavaTimeModule());
-            List<GameInfo> gameInfoList = objectMapper.readValue(new File(filePath), new TypeReference<List<GameInfo>>() {});
-
-            // Get RabbitTemplate bean
             RabbitTemplate rabbitTemplate = springContext.getBean(RabbitTemplate.class);
+            String filePath = args.length == 0 ? null : args[0];
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.registerModule(new JavaTimeModule());
+                List<Map<String, Object>> gameDataList = objectMapper.readValue(new File(filePath), new TypeReference<List<Map<String, Object>>>() {});
 
-            int totalMessages = gameInfoList.size();
-            int messagesSent = 0;
-
-            // For each GameInfo, send it to the 'game_info' queue
-            for (GameInfo gameInfo : gameInfoList) {
-                String messageId = UUID.randomUUID().toString();
-                String contentType = "application/json";
-
-                // Convert the GameInfo to JSON bytes
-                byte[] gameInfoBytes = objectMapper.writeValueAsBytes(gameInfo);
-
-                // Build the AMQP message
-                Message amqpMessage = MessageBuilder
-                    .withBody(gameInfoBytes)
-                    .setContentType(contentType)
-                    .setMessageId(messageId)
-                    .build();
-
-                // Send the message to the 'game_info' queue
-                rabbitTemplate.convertAndSend("game_info", amqpMessage);
-
-                System.out.println("Sent message with ID: " + messageId);
-                messagesSent++;
-
-                // Check if all messages are sent
-                if (messagesSent == totalMessages) {
-                    System.out.println("All messages sent. Exiting the program.");
-                    break;
+                for (Map<String, Object> gameData : gameDataList) {
+                    String messageId = UUID.randomUUID().toString();
+                    String contentType = "application/json";
+                    String gameId = gameData.get("id").toString();
+                    byte[] gameDataBytes = objectMapper.writeValueAsBytes(gameData);
+                    Message amqpMessage = MessageBuilder
+                        .withBody(gameDataBytes)
+                        .setContentType(contentType)
+                        .setMessageId(messageId)
+                        .setHeader("game_id", gameId)
+                        .build();
+                    rabbitTemplate.convertAndSend("game_info", amqpMessage);
+                    System.out.println("Sent message with ID: " + messageId + " and game_id: " + gameId);
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }
