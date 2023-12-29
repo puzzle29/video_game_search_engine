@@ -19,7 +19,12 @@ import java.util.stream.Collectors;
 @RestController
 public class GameSearchController {
     @Autowired
-    private RestHighLevelClient elasticsearchClient;
+    final private RestHighLevelClient elasticsearchClient;
+
+    public GameSearchController(RestHighLevelClient elasticsearchClient) {
+        this.elasticsearchClient = elasticsearchClient;
+    }
+
     @GetMapping("/api/games")
     public List<Map<String, Object>> searchGames(@RequestParam String query, @RequestParam(defaultValue = "10") int size) {
         SearchRequest searchRequest = new SearchRequest("games");
