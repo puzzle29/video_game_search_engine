@@ -21,12 +21,11 @@ public class Launcher {
     public static void main(String[] args) {
         try (AbstractApplicationContext springContext = new AnnotationConfigApplicationContext(Launcher.class)) {
             RabbitTemplate rabbitTemplate = springContext.getBean(RabbitTemplate.class);
-            String filePath = args.length == 0 ? null : args[0];
-            if (filePath == null) {throw new IllegalArgumentException("Missing file path argument");}
+            checkFilePathArgument(args);
             try {
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.registerModule(new JavaTimeModule());
-                List<Map<String, Object>> gameDataList = objectMapper.readValue(new File(filePath), new TypeReference<List<Map<String, Object>>>() {});
+                List<Map<String, Object>> gameDataList = objectMapper.readValue(new File(args[0]), new TypeReference<List<Map<String, Object>>>() {});
                 for (Map<String, Object> gameData : gameDataList) {
                     Message amqpMessage = MessageBuilder.withBody(objectMapper.writeValueAsBytes(gameData)).setContentType("application/json").setMessageId(UUID.randomUUID().toString()).setHeader("game_id", gameData.get("id").toString()).build();
                     rabbitTemplate.convertAndSend("game_info", amqpMessage);
@@ -36,4 +35,11 @@ public class Launcher {
             }
         }
     }
+
+    private static void checkFilePathArgument(String[] args) {
+        if (args.length == 0) {
+            throw new IllegalArgumentException("Missing file path argument");
+        }
+    }
+
 }

@@ -33,7 +33,10 @@ public class GameInfoListener {
             String gameId = headers.get("game_id").toString();
             String messageBody = new String(amqpMessage.getBody());
             Map<String, Object> gameData = objectMapper.readValue(messageBody, Map.class);
-            IndexRequest indexRequest = new IndexRequest("games").id(gameId).source(messageBody, XContentType.JSON);
+            IndexRequest indexRequest = new IndexRequest("games")
+                .id(gameId)
+                .source(messageBody, XContentType.JSON);
+            IndexResponse response = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
         } catch (Exception e) {
             e.printStackTrace();
         }

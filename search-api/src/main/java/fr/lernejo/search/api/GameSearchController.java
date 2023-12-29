@@ -32,15 +32,7 @@ public class GameSearchController {
         try {
             SearchResponse searchResponse = elasticsearchClient.search(searchRequest, RequestOptions.DEFAULT);
             return Optional.ofNullable(searchResponse)
-                .map(response -> Arrays.stream(response.getHits().getHits())
-                    .map(hit -> {
-                        Map<String, Object> gameData = new HashMap<>();
-                        gameData.put("id", hit.getId());
-                        gameData.putAll(hit.getSourceAsMap());
-                        return gameData;
-                    })
-                    .collect(Collectors.toList()))
-                .orElse(Collections.emptyList());
+                .map(response -> Arrays.stream(response.getHits().getHits()).map(SearchHit::getSourceAsMap).collect(Collectors.toList())).orElse(Collections.emptyList());
         } catch (IOException e) {
             e.printStackTrace();
             return Collections.emptyList();
